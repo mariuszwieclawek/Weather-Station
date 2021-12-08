@@ -12,5 +12,7 @@ main.c
 
 terminal.c
 
+TimerCTC.c
+
 usart.c
 

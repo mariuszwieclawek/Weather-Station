@@ -2,7 +2,7 @@
  * Stacja_Meteorologicza.c
  *
  * Created: 15.11.2021 15:50:08
- * Author : Mariusz
+ * 
  */ 
 
 #define F_CPU 16000000UL // Clock Speed
@@ -18,6 +18,7 @@
 #include "adc.h"
 #include "DHT11.h"
 #include "EEPROM.h"
+#include "TimecrCTC.h"
 
 #define BAUD 9600
 #define MYUBRR F_CPU/16/BAUD-1
@@ -28,14 +29,33 @@ uint8_t c=0,I_HUM,D_HUM,I_Temp,D_Temp,CheckSum;
 
 unsigned int EEPROM_ADDRESS = 0x0000;		//tutaj okreslamy miejsce w pamieci w ktorym chcemy zapisac dane i pozniej je odczytac
 
+uint16_t one_sec = 0;
+uint16_t ten_min = 0;
+
+
+#define LED (1<<PORTB5)		// Wbudowana dioda led na PORTB5
+#define LED_ON PORTB |= LED
+#define LED_OFF PORTB &= ~LED
+#define LED_TOG PORTB ^= LED
+
+
+ISR(TIMER1_COMPA_vect) // Przerwanie od porównania zawartoœci licznika sprzetowego Timera z rejestrem OCR1A
+{ 
+	one_sec++;
+	if (one_sec == 5)
+	{
+		ten_min = 1;
+		one_sec = 0;
+	}
+}
+
 
 int main(void)
 {
+	cli();
 	USART_Init(MYUBRR);		//inicjalizacja uart
 	ADC_INIT_AVCC();		//inicjalizacja przetwornika ADC
-
-	_delay_ms(1000); //stabilizacja zasilania
-	
+	TimerCTC_INIT();
 	
 	/* Wyswietlenie wiadomosci startowej */
 	tr_cls(0);
@@ -47,12 +67,11 @@ int main(void)
 	double meas1 = 0;				//tu zapiszemy wartosc pobrana przez ADC na kanale PC1
 	double meas2 = 0;				//tu zapiszemy wartosc pobrana przez ADC na kanale PC2
 	
+	DDRB |= LED;
 	
+	sei();
 	while(1)
 	{
-		_delay_ms(1000);
-		//tr_attr(1,RED,BLACK);
-		
 		/************************************************			ADC				*************************************************************/
 		
 		/********************* ADC1 RAINDROPS MEASUREMENT************************/ 
@@ -98,19 +117,26 @@ int main(void)
 		Data_Measurements.D_Humidity = D_HUM;
 		
 		
-		/************************************************		EEPROM READ AND WRITE			*************************************************************/
-		//write_all_to_EEPROM(EEPROM_ADDRESS,&Data_Measurements);
-		read_all_from_EEPROM(EEPROM_ADDRESS);
-		
+		/************************************************		   EEPROM READ AND WRITE			*************************************************************/
+		cli();
+		if(ten_min == 1) // if 10 minutes have passed
+		{
+			LED_TOG; // change of state to the opposite diode
+			write_all_to_EEPROM(EEPROM_ADDRESS,&Data_Measurements);
+			read_all_from_EEPROM(EEPROM_ADDRESS);
+			ten_min = 0;
+		}
+		sei();
 		
 		/************************************************				DISPLAYS					*************************************************************/
-		// ADC1 RAINDROPS DISPLAY
+		cli(); // Interuppt off, cannot display eeprom data while displaying measurements
+			// ADC1 RAINDROPS DISPLAY
 		tr_locate(1,1);
 		tr_attr(1,YELLOW,BLACK);
 		USART_PutS("RAIN_DROPS_ADC1 = ");
 		USART_PutInt(meas1,10);
 		USART_PutS("         \n");
-			//VOLTAGE DISPLAY
+			// VOLTAGE DISPLAY ADC1
 		tr_locate(2,1);
 		tr_pen_color(MAGENTA);
 		USART_PutS("RAIN_DROPS_VOLTAGE = ");
@@ -120,13 +146,13 @@ int main(void)
 		tr_locate(2,27);
 		USART_PutS("V\n");
 		
-		// ADC2 LIGHT INTENSITY DISPLAY
+			// ADC2 LIGHT INTENSITY DISPLAY
 		tr_locate(3,1);
 		tr_attr(1,CYAN,BLACK);
 		USART_PutS("LIGHT_INTENSITY_ADC2 = ");
 		USART_PutInt(meas2,10);
 		USART_PutS("         \n");
-			//VOLTAGE DISPLAY
+			//VOLTAGE DISPLAY ADC2
 		tr_locate(4,1);
 		tr_pen_color(GREEN);
 		USART_PutS("LIGHT_INTENSITY_VOLTAGE = ");
@@ -136,7 +162,7 @@ int main(void)
 		tr_locate(4,32);
 		USART_PutS("V\n");
 		
-		//DHT11 DISPLAY
+			//DHT11 DISPLAY
 		if ((I_HUM + D_HUM + I_Temp + D_Temp) != CheckSum) 
 			USART_PutS("Error");
 		else
@@ -158,5 +184,6 @@ int main(void)
 			USART_PutC(176);
 			USART_PutS("C\n");
 		}	
+		sei();
 	}
 }

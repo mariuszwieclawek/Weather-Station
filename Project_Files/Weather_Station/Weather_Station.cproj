@@ -161,6 +161,12 @@
     <Compile Include="terminal.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="TimecrCTC.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="TimerCTC.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="usart.c">
       <SubType>compile</SubType>
     </Compile>
