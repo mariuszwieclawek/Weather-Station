@@ -1,2 +1,2 @@
 # Weather-Station
-Simply weather station, temperature, huminidity, light and rain intensity.
+Simply weather station. Temperature, huminidity, light and rain intensity measurements.
