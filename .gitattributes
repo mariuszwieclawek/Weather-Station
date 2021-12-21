@@ -1,2 +1,3 @@
 *.d linguist-detectable=false
 *.mk linguist-detectable=false
+Project_Files/Weather_Station/Debug/Makefile linguist-detectable=false
