@@ -7,8 +7,8 @@
 
 
 
-#ifndef MK_TERM_H_
-#define MK_TERM_H_
+#ifndef TERMINAL_H
+#define TERMINAL_H
 
 // atrybuty znaku
 #define RESET		0
@@ -40,4 +40,4 @@ void tr_attr( uint8_t atr, uint8_t fg, uint8_t bg );// ustaw atrybut: znaku oraz
 void fill_line( char ascii, uint8_t cnt );
 
 
-#endif /* MK_TERM_H_ */
+#endif

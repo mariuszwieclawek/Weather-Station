@@ -242,39 +242,76 @@ Disassembly of section .text:
  1bc:	08 95       	ret
 
 000001be <EEPROM_write>:
+#include "usart.h"
+#include "EEPROM.h"
+
+void EEPROM_write(unsigned int uiAddress, int8_t ucData)
+{
+	cli();
  1be:	f8 94       	cli
+	/* Wait for completion of previous write */
+	while(EECR & (1<<EEPE))
  1c0:	f9 99       	sbic	0x1f, 1	; 31
  1c2:	fe cf       	rjmp	.-4      	; 0x1c0 <EEPROM_write+0x2>
+	;
+	/* Set up address and Data Registers */
+	EEAR = uiAddress;
  1c4:	92 bd       	out	0x22, r25	; 34
  1c6:	81 bd       	out	0x21, r24	; 33
+	EEDR = ucData;
  1c8:	60 bd       	out	0x20, r22	; 32
+	/* Write logical one to EEMPE */
+	EECR |= (1<<EEMPE);
  1ca:	8f b3       	in	r24, 0x1f	; 31
  1cc:	84 60       	ori	r24, 0x04	; 4
  1ce:	8f bb       	out	0x1f, r24	; 31
+	/* Start eeprom write by setting EEPE */
+	EECR |= (1<<EEPE);  //When the write access time has elapsed, the EEPE bit is cleared by hardware.
  1d0:	8f b3       	in	r24, 0x1f	; 31
  1d2:	82 60       	ori	r24, 0x02	; 2
  1d4:	8f bb       	out	0x1f, r24	; 31
+	sei();
  1d6:	78 94       	sei
  1d8:	08 95       	ret
 
 000001da <EEPROM_read>:
+}
+
+unsigned char EEPROM_read(unsigned int uiAddress)
+{
+	cli();
  1da:	f8 94       	cli
+	/* Wait for completion of previous write */
+	while(EECR & (1<<EEPE))
  1dc:	f9 99       	sbic	0x1f, 1	; 31
  1de:	fe cf       	rjmp	.-4      	; 0x1dc <EEPROM_read+0x2>
+	;
+	/* Set up address register */
+	EEAR = uiAddress;
  1e0:	92 bd       	out	0x22, r25	; 34
  1e2:	81 bd       	out	0x21, r24	; 33
+	/* Start eeprom read by writing EERE */
+	EECR |= (1<<EERE);
  1e4:	8f b3       	in	r24, 0x1f	; 31
  1e6:	81 60       	ori	r24, 0x01	; 1
  1e8:	8f bb       	out	0x1f, r24	; 31
+	/* Return data from Data Register */
+	return EEDR;
  1ea:	80 b5       	in	r24, 0x20	; 32
+	sei();
+}
  1ec:	08 95       	ret
 
 000001ee <write_all_to_EEPROM>:
+
+void write_all_to_EEPROM(unsigned int uiAddress, DATA * pomiary )
+{
  1ee:	0f 93       	push	r16
  1f0:	1f 93       	push	r17
  1f2:	cf 93       	push	r28
  1f4:	df 93       	push	r29
  1f6:	8b 01       	movw	r16, r22
+	EEPROM_write(uiAddress*8,pomiary->I_Humidity);
  1f8:	fb 01       	movw	r30, r22
  1fa:	60 81       	ld	r22, Z
  1fc:	ec 01       	movw	r28, r24
@@ -286,41 +323,49 @@ Disassembly of section .text:
  208:	dd 1f       	adc	r29, r29
  20a:	ce 01       	movw	r24, r28
  20c:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+1,pomiary->D_Humidity);
  210:	f8 01       	movw	r30, r16
  212:	61 81       	ldd	r22, Z+1	; 0x01
  214:	ce 01       	movw	r24, r28
  216:	01 96       	adiw	r24, 0x01	; 1
  218:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+2,pomiary->I_Temperature);
  21c:	f8 01       	movw	r30, r16
  21e:	62 81       	ldd	r22, Z+2	; 0x02
  220:	ce 01       	movw	r24, r28
  222:	02 96       	adiw	r24, 0x02	; 2
  224:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+3,pomiary->D_Temperature);
  228:	f8 01       	movw	r30, r16
  22a:	63 81       	ldd	r22, Z+3	; 0x03
  22c:	ce 01       	movw	r24, r28
  22e:	03 96       	adiw	r24, 0x03	; 3
  230:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+4,pomiary->I_sensor1);
  234:	f8 01       	movw	r30, r16
  236:	64 81       	ldd	r22, Z+4	; 0x04
  238:	ce 01       	movw	r24, r28
  23a:	04 96       	adiw	r24, 0x04	; 4
  23c:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+5,pomiary->D_sensor1);
  240:	f8 01       	movw	r30, r16
  242:	65 81       	ldd	r22, Z+5	; 0x05
  244:	ce 01       	movw	r24, r28
  246:	05 96       	adiw	r24, 0x05	; 5
  248:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+6,pomiary->I_sensor2);
  24c:	f8 01       	movw	r30, r16
  24e:	66 81       	ldd	r22, Z+6	; 0x06
  250:	ce 01       	movw	r24, r28
  252:	06 96       	adiw	r24, 0x06	; 6
  254:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+	EEPROM_write(uiAddress*8+7,pomiary->D_sensor2);
  258:	f8 01       	movw	r30, r16
  25a:	67 81       	ldd	r22, Z+7	; 0x07
  25c:	ce 01       	movw	r24, r28
  25e:	07 96       	adiw	r24, 0x07	; 7
  260:	0e 94 df 00 	call	0x1be	; 0x1be <EEPROM_write>
+}
  264:	df 91       	pop	r29
  266:	cf 91       	pop	r28
  268:	1f 91       	pop	r17
@@ -328,59 +373,79 @@ Disassembly of section .text:
  26c:	08 95       	ret
 
 0000026e <read_all_from_EEPROM>:
+
+void read_all_from_EEPROM( unsigned int uiAddress )
+{
  26e:	cf 93       	push	r28
  270:	df 93       	push	r29
  272:	ec 01       	movw	r28, r24
+	static char n = 1;
+	tr_locate(9,1);
  274:	61 e0       	ldi	r22, 0x01	; 1
  276:	89 e0       	ldi	r24, 0x09	; 9
  278:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	tr_attr(1,WHITE,BLACK);
  27c:	40 e0       	ldi	r20, 0x00	; 0
  27e:	67 e0       	ldi	r22, 0x07	; 7
  280:	81 e0       	ldi	r24, 0x01	; 1
  282:	0e 94 f2 03 	call	0x7e4	; 0x7e4 <tr_attr>
+	USART_PutS("==============================READ FROM EEPROM==============================\n");
  286:	81 e0       	ldi	r24, 0x01	; 1
  288:	91 e0       	ldi	r25, 0x01	; 1
  28a:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+	tr_locate(10,1);
  28e:	61 e0       	ldi	r22, 0x01	; 1
  290:	8a e0       	ldi	r24, 0x0A	; 10
  292:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutS("	                 Measurements every 10 minutes!");
  296:	8f e4       	ldi	r24, 0x4F	; 79
  298:	91 e0       	ldi	r25, 0x01	; 1
  29a:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+	tr_locate(11,1);
  29e:	61 e0       	ldi	r22, 0x01	; 1
  2a0:	8b e0       	ldi	r24, 0x0B	; 11
  2a2:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutS("============================================================================\n");
  2a6:	80 e8       	ldi	r24, 0x80	; 128
  2a8:	91 e0       	ldi	r25, 0x01	; 1
  2aa:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+	tr_locate(12,1);
  2ae:	61 e0       	ldi	r22, 0x01	; 1
  2b0:	8c e0       	ldi	r24, 0x0C	; 12
  2b2:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutS("n");
  2b6:	8e ec       	ldi	r24, 0xCE	; 206
  2b8:	91 e0       	ldi	r25, 0x01	; 1
  2ba:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
- 2be:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	tr_locate(12+n,1);
+ 2be:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  2c2:	61 e0       	ldi	r22, 0x01	; 1
  2c4:	84 5f       	subi	r24, 0xF4	; 244
  2c6:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
- 2ca:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	USART_PutInt(n,10);
+ 2ca:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  2ce:	6a e0       	ldi	r22, 0x0A	; 10
  2d0:	90 e0       	ldi	r25, 0x00	; 0
  2d2:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	tr_locate(12,5);
  2d6:	65 e0       	ldi	r22, 0x05	; 5
  2d8:	8c e0       	ldi	r24, 0x0C	; 12
  2da:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	tr_attr(1,BLUE,BLACK);
  2de:	40 e0       	ldi	r20, 0x00	; 0
  2e0:	64 e0       	ldi	r22, 0x04	; 4
  2e2:	81 e0       	ldi	r24, 0x01	; 1
  2e4:	0e 94 f2 03 	call	0x7e4	; 0x7e4 <tr_attr>
+	USART_PutS("Humidity [%]");
  2e8:	80 ed       	ldi	r24, 0xD0	; 208
  2ea:	91 e0       	ldi	r25, 0x01	; 1
  2ec:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
- 2f0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	tr_locate(12+n,5);
+ 2f0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  2f4:	65 e0       	ldi	r22, 0x05	; 5
  2f6:	84 5f       	subi	r24, 0xF4	; 244
  2f8:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutInt(EEPROM_read(uiAddress*8),10);
  2fc:	cc 0f       	add	r28, r28
  2fe:	dd 1f       	adc	r29, r29
  300:	cc 0f       	add	r28, r28
@@ -392,108 +457,140 @@ Disassembly of section .text:
  30e:	6a e0       	ldi	r22, 0x0A	; 10
  310:	90 e0       	ldi	r25, 0x00	; 0
  312:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutC('.');
  316:	8e e2       	ldi	r24, 0x2E	; 46
  318:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+	USART_PutInt(EEPROM_read(uiAddress*8+1),10);
  31c:	ce 01       	movw	r24, r28
  31e:	01 96       	adiw	r24, 0x01	; 1
  320:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  324:	6a e0       	ldi	r22, 0x0A	; 10
  326:	90 e0       	ldi	r25, 0x00	; 0
  328:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	tr_locate(12,20);
  32c:	64 e1       	ldi	r22, 0x14	; 20
  32e:	8c e0       	ldi	r24, 0x0C	; 12
  330:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	tr_attr(1,RED,BLACK);
  334:	40 e0       	ldi	r20, 0x00	; 0
  336:	61 e0       	ldi	r22, 0x01	; 1
  338:	81 e0       	ldi	r24, 0x01	; 1
  33a:	0e 94 f2 03 	call	0x7e4	; 0x7e4 <tr_attr>
+	USART_PutS("Temperature [°]");
  33e:	8d ed       	ldi	r24, 0xDD	; 221
  340:	91 e0       	ldi	r25, 0x01	; 1
  342:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
- 346:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	tr_locate(12+n,20);
+ 346:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  34a:	64 e1       	ldi	r22, 0x14	; 20
  34c:	84 5f       	subi	r24, 0xF4	; 244
  34e:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutInt(EEPROM_read(uiAddress*8+2),10);
  352:	ce 01       	movw	r24, r28
  354:	02 96       	adiw	r24, 0x02	; 2
  356:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  35a:	6a e0       	ldi	r22, 0x0A	; 10
  35c:	90 e0       	ldi	r25, 0x00	; 0
  35e:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutC('.');
  362:	8e e2       	ldi	r24, 0x2E	; 46
  364:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+	USART_PutInt(EEPROM_read(uiAddress*8+3),10);
  368:	ce 01       	movw	r24, r28
  36a:	03 96       	adiw	r24, 0x03	; 3
  36c:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  370:	6a e0       	ldi	r22, 0x0A	; 10
  372:	90 e0       	ldi	r25, 0x00	; 0
  374:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	tr_locate(12,40);
  378:	68 e2       	ldi	r22, 0x28	; 40
  37a:	8c e0       	ldi	r24, 0x0C	; 12
  37c:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	tr_attr(1,MAGENTA,BLACK);
  380:	40 e0       	ldi	r20, 0x00	; 0
  382:	65 e0       	ldi	r22, 0x05	; 5
  384:	81 e0       	ldi	r24, 0x01	; 1
  386:	0e 94 f2 03 	call	0x7e4	; 0x7e4 <tr_attr>
+	USART_PutS("RAIN_VOLTAGE [V]");
  38a:	8d ee       	ldi	r24, 0xED	; 237
  38c:	91 e0       	ldi	r25, 0x01	; 1
  38e:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
- 392:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	tr_locate(12+n,40);
+ 392:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  396:	68 e2       	ldi	r22, 0x28	; 40
  398:	84 5f       	subi	r24, 0xF4	; 244
  39a:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutInt(EEPROM_read(uiAddress*8+4),10);
  39e:	ce 01       	movw	r24, r28
  3a0:	04 96       	adiw	r24, 0x04	; 4
  3a2:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  3a6:	6a e0       	ldi	r22, 0x0A	; 10
  3a8:	90 e0       	ldi	r25, 0x00	; 0
  3aa:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutS(".");
  3ae:	8e ef       	ldi	r24, 0xFE	; 254
  3b0:	91 e0       	ldi	r25, 0x01	; 1
  3b2:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+	USART_PutInt(EEPROM_read(uiAddress*8+5),10);
  3b6:	ce 01       	movw	r24, r28
  3b8:	05 96       	adiw	r24, 0x05	; 5
  3ba:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  3be:	6a e0       	ldi	r22, 0x0A	; 10
  3c0:	90 e0       	ldi	r25, 0x00	; 0
  3c2:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	tr_locate(12,60);
  3c6:	6c e3       	ldi	r22, 0x3C	; 60
  3c8:	8c e0       	ldi	r24, 0x0C	; 12
  3ca:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	tr_attr(1,GREEN,BLACK);
  3ce:	40 e0       	ldi	r20, 0x00	; 0
  3d0:	62 e0       	ldi	r22, 0x02	; 2
  3d2:	81 e0       	ldi	r24, 0x01	; 1
  3d4:	0e 94 f2 03 	call	0x7e4	; 0x7e4 <tr_attr>
+	USART_PutS("LIGHT_VOLTAGE [V]");
  3d8:	80 e0       	ldi	r24, 0x00	; 0
  3da:	92 e0       	ldi	r25, 0x02	; 2
  3dc:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
- 3e0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	tr_locate(12+n,60);
+ 3e0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  3e4:	6c e3       	ldi	r22, 0x3C	; 60
  3e6:	84 5f       	subi	r24, 0xF4	; 244
  3e8:	0e 94 31 04 	call	0x862	; 0x862 <tr_locate>
+	USART_PutInt(EEPROM_read(uiAddress*8+6),10);
  3ec:	ce 01       	movw	r24, r28
  3ee:	06 96       	adiw	r24, 0x06	; 6
  3f0:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  3f4:	6a e0       	ldi	r22, 0x0A	; 10
  3f6:	90 e0       	ldi	r25, 0x00	; 0
  3f8:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutS(".");
  3fc:	8e ef       	ldi	r24, 0xFE	; 254
  3fe:	91 e0       	ldi	r25, 0x01	; 1
  400:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+	USART_PutInt(EEPROM_read(uiAddress*8+7),10);
  404:	ce 01       	movw	r24, r28
  406:	07 96       	adiw	r24, 0x07	; 7
  408:	0e 94 ed 00 	call	0x1da	; 0x1da <EEPROM_read>
  40c:	6a e0       	ldi	r22, 0x0A	; 10
  40e:	90 e0       	ldi	r25, 0x00	; 0
  410:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
- 414:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+	
+	n++;
+ 414:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__data_start>
  418:	8f 5f       	subi	r24, 0xFF	; 255
- 41a:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 41a:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__data_start>
+	
+	if(n == 10)
  41e:	8a 30       	cpi	r24, 0x0A	; 10
  420:	29 f4       	brne	.+10     	; 0x42c <__EEPROM_REGION_LENGTH__+0x2c>
+	{
+		n = 1;
  422:	81 e0       	ldi	r24, 0x01	; 1
- 424:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 424:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__data_start>
+		tr_cls(1);
  428:	0e 94 df 03 	call	0x7be	; 0x7be <tr_cls>
+	}
+	
  42c:	df 91       	pop	r29
  42e:	cf 91       	pop	r28
  430:	08 95       	ret
@@ -995,6 +1092,12 @@ int main(void)
  7a4:	8c ce       	rjmp	.-744    	; 0x4be <main+0x46>
 
 000007a6 <tr_cursor_hide>:
+	USART_PutC( 0x1b );		// <ESC>[44m
+	USART_PutC( '[' );
+	USART_PutC( '4' );
+	USART_PutC( cl+'0' );
+	USART_PutC( 'm' );
+}
  7a6:	88 23       	and	r24, r24
  7a8:	29 f0       	breq	.+10     	; 0x7b4 <tr_cursor_hide+0xe>
  7aa:	8f eb       	ldi	r24, 0xBF	; 191
@@ -1076,26 +1179,37 @@ int main(void)
  860:	08 95       	ret
 
 00000862 <tr_locate>:
+
+
+void tr_locate( uint8_t y, uint8_t x ) {
  862:	cf 93       	push	r28
  864:	df 93       	push	r29
  866:	d8 2f       	mov	r29, r24
  868:	c6 2f       	mov	r28, r22
+
+	USART_PutC( 0x1b );	// <ESC>[y;xH
  86a:	8b e1       	ldi	r24, 0x1B	; 27
  86c:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+	USART_PutC( '[' );
  870:	8b e5       	ldi	r24, 0x5B	; 91
  872:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+	USART_PutInt( y, 10 );
  876:	6a e0       	ldi	r22, 0x0A	; 10
  878:	8d 2f       	mov	r24, r29
  87a:	90 e0       	ldi	r25, 0x00	; 0
  87c:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutC( ';' );
  880:	8b e3       	ldi	r24, 0x3B	; 59
  882:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+	USART_PutInt( x, 10 );
  886:	6a e0       	ldi	r22, 0x0A	; 10
  888:	8c 2f       	mov	r24, r28
  88a:	90 e0       	ldi	r25, 0x00	; 0
  88c:	0e 94 82 04 	call	0x904	; 0x904 <USART_PutInt>
+	USART_PutC( 'H' );
  890:	88 e4       	ldi	r24, 0x48	; 72
  892:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
+}
  896:	df 91       	pop	r29
  898:	cf 91       	pop	r28
  89a:	08 95       	ret
@@ -1134,36 +1248,62 @@ void TimerCTC_INIT(void)
  8c4:	08 95       	ret
 
 000008c6 <USART_Init>:
+
+#include "usart.h"
+
+void USART_Init( unsigned int ubrr) // Initialization UART
+{
+	UBRR0H = (unsigned char)(ubrr>>8); //Set baud rate
  8c6:	90 93 c5 00 	sts	0x00C5, r25	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7f80c5>
+	UBRR0L = (unsigned char)ubrr;
  8ca:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7f80c4>
+	
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0); // Enable receiver and transmitter 
  8ce:	88 e1       	ldi	r24, 0x18	; 24
  8d0:	80 93 c1 00 	sts	0x00C1, r24	; 0x8000c1 <__TEXT_REGION_LENGTH__+0x7f80c1>
+	
+	UCSR0C = (3<<UCSZ00); // Set frame format: 8data, 1stop bit 
  8d4:	86 e0       	ldi	r24, 0x06	; 6
  8d6:	80 93 c2 00 	sts	0x00C2, r24	; 0x8000c2 <__TEXT_REGION_LENGTH__+0x7f80c2>
  8da:	08 95       	ret
 
 000008dc <USART_PutC>:
+}
+
+void USART_PutC( char data ) // function that sends a single character
+{
+	while ( !( UCSR0A & (1<<UDRE0)) ); // Wait for empty transmit buffer
  8dc:	90 91 c0 00 	lds	r25, 0x00C0	; 0x8000c0 <__TEXT_REGION_LENGTH__+0x7f80c0>
  8e0:	95 ff       	sbrs	r25, 5
  8e2:	fc cf       	rjmp	.-8      	; 0x8dc <USART_PutC>
+	UDR0 = data; // Put data into buffer, sends the data
  8e4:	80 93 c6 00 	sts	0x00C6, r24	; 0x8000c6 <__TEXT_REGION_LENGTH__+0x7f80c6>
  8e8:	08 95       	ret
 
 000008ea <USART_PutS>:
+}
+
+void USART_PutS( char * s) // function that sends a string
+{
  8ea:	cf 93       	push	r28
  8ec:	df 93       	push	r29
  8ee:	ec 01       	movw	r28, r24
+	while( *s ) USART_PutC( *s++ );
  8f0:	03 c0       	rjmp	.+6      	; 0x8f8 <USART_PutS+0xe>
  8f2:	21 96       	adiw	r28, 0x01	; 1
  8f4:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
  8f8:	88 81       	ld	r24, Y
  8fa:	81 11       	cpse	r24, r1
  8fc:	fa cf       	rjmp	.-12     	; 0x8f2 <USART_PutS+0x8>
+}
  8fe:	df 91       	pop	r29
  900:	cf 91       	pop	r28
  902:	08 95       	ret
 
 00000904 <USART_PutInt>:
+
+void USART_PutInt(uint16_t number, uint8_t radix) // send the number and specify what format we want (bin/dec/hex)
+{
  904:	cf 93       	push	r28
  906:	df 93       	push	r29
  908:	cd b7       	in	r28, 0x3d	; 61
@@ -1174,6 +1314,8 @@ void TimerCTC_INIT(void)
  912:	de bf       	out	0x3e, r29	; 62
  914:	0f be       	out	0x3f, r0	; 63
  916:	cd bf       	out	0x3d, r28	; 61
+	char buf[17];
+	itoa(number,buf,radix); //bin/dec/hex
  918:	46 2f       	mov	r20, r22
  91a:	50 e0       	ldi	r21, 0x00	; 0
 extern __inline__ __ATTR_GNU_INLINE__
@@ -1186,9 +1328,11 @@ char *itoa (int __val, char *__s, int __radix)
  91e:	6f 5f       	subi	r22, 0xFF	; 255
  920:	7f 4f       	sbci	r23, 0xFF	; 255
  922:	0e 94 08 06 	call	0xc10	; 0xc10 <itoa>
+	USART_PutS(buf);
  926:	ce 01       	movw	r24, r28
  928:	01 96       	adiw	r24, 0x01	; 1
  92a:	0e 94 75 04 	call	0x8ea	; 0x8ea <USART_PutS>
+}
  92e:	61 96       	adiw	r28, 0x11	; 17
  930:	0f b6       	in	r0, 0x3f	; 63
  932:	f8 94       	cli
@@ -1200,9 +1344,14 @@ char *itoa (int __val, char *__s, int __radix)
  93e:	08 95       	ret
 
 00000940 <USART_PutS_P>:
+
+void USART_PutS_P(const char *s)	//sends string from RAM to UART
+{
  940:	cf 93       	push	r28
  942:	df 93       	push	r29
  944:	fc 01       	movw	r30, r24
+	register char c;
+	while((c = pgm_read_byte(s++) )) USART_PutC(c);
  946:	03 c0       	rjmp	.+6      	; 0x94e <USART_PutS_P+0xe>
  948:	0e 94 6e 04 	call	0x8dc	; 0x8dc <USART_PutC>
  94c:	fe 01       	movw	r30, r28
@@ -1211,6 +1360,7 @@ char *itoa (int __val, char *__s, int __radix)
  952:	84 91       	lpm	r24, Z
  954:	81 11       	cpse	r24, r1
  956:	f8 cf       	rjmp	.-16     	; 0x948 <USART_PutS_P+0x8>
+}
  958:	df 91       	pop	r29
  95a:	cf 91       	pop	r28
  95c:	08 95       	ret

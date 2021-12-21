@@ -20,6 +20,7 @@
 #include "EEPROM.h"
 #include "TimecrCTC.h"
 
+#define F_CPU 16000000UL // Clock Speed
 #define BAUD 9600
 #define MYUBRR F_CPU/16/BAUD-1
 

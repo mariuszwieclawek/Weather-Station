@@ -800,9 +800,9 @@ END GROUP
                                 0x1b8 (size before relaxing)
  .debug_str     0x0000049c       0x91 DHT11.o
                                 0x213 (size before relaxing)
- .debug_str     0x0000052d      0x116 EEPROM.o
+ .debug_str     0x0000052d      0x17e EEPROM.o
                                 0x2ad (size before relaxing)
- .debug_str     0x00000643      0x120 main.o
+ .debug_str     0x000006ab       0xb8 main.o
                                 0x3ad (size before relaxing)
  .debug_str     0x00000763       0x88 terminal.o
                                 0x252 (size before relaxing)
