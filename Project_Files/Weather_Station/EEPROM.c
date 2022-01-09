@@ -1,10 +1,3 @@
-/*
- * EEPROM.c
- *
- * Created: 23.11.2021 14:55:19
- *  Author: Mariusz
- */ 
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
@@ -43,16 +36,16 @@ unsigned char EEPROM_read(unsigned int uiAddress)
 	sei();
 }
 
-void write_all_to_EEPROM(unsigned int uiAddress, DATA * pomiary )
+void write_all_to_EEPROM(unsigned int uiAddress, DATA * measurements )
 {
-	EEPROM_write(uiAddress*8,pomiary->I_Humidity);
-	EEPROM_write(uiAddress*8+1,pomiary->D_Humidity);
-	EEPROM_write(uiAddress*8+2,pomiary->I_Temperature);
-	EEPROM_write(uiAddress*8+3,pomiary->D_Temperature);
-	EEPROM_write(uiAddress*8+4,pomiary->I_sensor1);
-	EEPROM_write(uiAddress*8+5,pomiary->D_sensor1);
-	EEPROM_write(uiAddress*8+6,pomiary->I_sensor2);
-	EEPROM_write(uiAddress*8+7,pomiary->D_sensor2);
+	EEPROM_write(uiAddress*8,measurements->I_Humidity);
+	EEPROM_write(uiAddress*8+1,measurements->D_Humidity);
+	EEPROM_write(uiAddress*8+2,measurements->I_Temperature);
+	EEPROM_write(uiAddress*8+3,measurements->D_Temperature);
+	EEPROM_write(uiAddress*8+4,measurements->I_sensor1);
+	EEPROM_write(uiAddress*8+5,measurements->D_sensor1);
+	EEPROM_write(uiAddress*8+6,measurements->I_sensor2);
+	EEPROM_write(uiAddress*8+7,measurements->D_sensor2);
 }
 
 void read_all_from_EEPROM( unsigned int uiAddress )

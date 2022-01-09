@@ -1,9 +1,3 @@
-/*
- * usart.c
- *
- * Created: 16.11.2021 11:31:16
- *  Author: Mariusz
- */ 
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>

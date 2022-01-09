@@ -1,10 +1,3 @@
-/*
- * DHT11.h
- *
- * Created: 16.11.2021 17:58:16
- *  Author: Mariusz
- */ 
-
 
 #ifndef DHT11_H_
 #define DHT11_H_

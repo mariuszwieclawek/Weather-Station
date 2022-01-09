@@ -1,9 +1,3 @@
-/*
- * DHT11.c
- *
- * Created: 16.11.2021 17:55:40
- *  Author: Mariusz
- */ 
 
 #define F_CPU 16000000UL
 
@@ -11,7 +5,7 @@
 #include <util/delay.h>
 #include "DHT11.h"
 
-#define DHT11_PIN PORTD6		// Na tym porcie czujnik DHT11
+#define DHT11_PIN PORTD6		// DHT11 sensor on this pin
 
 void DHT_Request()				/* Microcontroller send start pulse/request */
 {

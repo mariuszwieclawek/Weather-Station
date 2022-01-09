@@ -1,5 +1,5 @@
 /*
- * Stacja_Meteorologicza.c
+ * Weather_Station.c
  *
  * Created: 15.11.2021 15:50:08
  * 
@@ -20,27 +20,26 @@
 #include "EEPROM.h"
 #include "TimecrCTC.h"
 
-#define F_CPU 16000000UL // Clock Speed
 #define BAUD 9600
 #define MYUBRR F_CPU/16/BAUD-1
 
-#define ADCIN PORTC2   //definicja ADCIN (wej?cie ADC2), PRZETWORNIK ADC2 NA PORCIE PORTC2
+//#define ADCIN PORTC2   //definicja ADCIN (wej?cie ADC2), PRZETWORNIK ADC2 NA PORCIE PORTC2
 
 uint8_t c=0,I_HUM,D_HUM,I_Temp,D_Temp,CheckSum;
 
-unsigned int EEPROM_ADDRESS = 0x0000;		//tutaj okreslamy miejsce w pamieci w ktorym chcemy zapisac dane i pozniej je odczytac
+unsigned int EEPROM_ADDRESS = 0x0000;		// address where we save the data measurements in eeprom memory
 
-uint16_t one_sec = 0;
+uint16_t one_sec = 0; //seconds counter
 uint16_t ten_min = 0;
 
 
-#define LED (1<<PORTB5)		// Wbudowana dioda led na PORTB5
+#define LED (1<<PORTB5)		// Built-in led on PORTB5
 #define LED_ON PORTB |= LED
 #define LED_OFF PORTB &= ~LED
 #define LED_TOG PORTB ^= LED
 
 
-ISR(TIMER1_COMPA_vect) // Przerwanie od porównania zawartoœci licznika sprzetowego Timera z rejestrem OCR1A
+ISR(TIMER1_COMPA_vect) // Interrupt from comparing the contents of the Timer's hardware counter with the OCR1A register
 { 
 	one_sec++;
 	if (one_sec == 5)
@@ -54,19 +53,19 @@ ISR(TIMER1_COMPA_vect) // Przerwanie od porównania zawartoœci licznika sprzetowe
 int main(void)
 {
 	cli();
-	USART_Init(MYUBRR);		//inicjalizacja uart
-	ADC_INIT_AVCC();		//inicjalizacja przetwornika ADC
-	TimerCTC_INIT();
+	USART_Init(MYUBRR);		// initialization USART
+	ADC_INIT_AVCC();		// initialization converter ADC
+	TimerCTC_INIT();		// initialization timer
 	
-	/* Wyswietlenie wiadomosci startowej */
+	/* Start */
 	tr_cls(0);
 	USART_PutS("Pomiar wilgotnosci, temperatury oraz natezenia swiatla: ");
 	_delay_ms(2000);
 	tr_cls(1);
 	
-	DDRC &=	~(1<<ADCIN);            //Ustawienie PORTC2 jako wejscie (przetwornik ADC)
-	double meas1 = 0;				//tu zapiszemy wartosc pobrana przez ADC na kanale PC1
-	double meas2 = 0;				//tu zapiszemy wartosc pobrana przez ADC na kanale PC2
+	//DDRC &=	~(1<<ADCIN);            //Ustawienie PORTC2 jako wejscie (przetwornik ADC)
+	double meas1 = 0;				// ADC on channel PC1
+	double meas2 = 0;				// ADC on channel PC2
 	
 	DDRB |= LED;
 	
@@ -79,26 +78,26 @@ int main(void)
 		meas1 = ADC_MEASURE(PORTC1);
 		
 		// ADC1 RAINDROPS AS A VOLTAGE
-		meas1 = (5 * meas1) / 1024;			// skalujemy jako napiecie, 1024 bo ADC 10bitowy
-		meas1 *= 100;							// przesuwamy o dwa miejsca tak zeby zmienic format z x,xx na xxx
-		div_t divmod1 = div(meas1,100);		// tworzymy strukture w ktorej zapisujemy wynik i reszte z dzielenia przez 100 divmod.quot-wynik, divmod.rem-reszta
+		meas1 = (5 * meas1) / 1024;			// we scale as voltage, 1024 because ADC 10bit
+		meas1 *= 100;							// we shift it by two places to change the format from x, xx to xxx
+		div_t divmod1 = div(meas1,100);		// we create a structure in which we save the result and the remainder from division by 100 divmod.quot-result, divmod.rem-remainder
 		
 		//WRITE MEASUREMENTS TO STRUCTURE		//DATA STRUCTURE DEFINE IN EEPROM.h
-		Data_Measurements.I_sensor1 = divmod1.quot;			// zapisujemy w strukturze czesci calkowite
-		Data_Measurements.D_sensor1 = divmod1.rem;			// zapisujemy w strukturze czesci ulamkowe
+		Data_Measurements.I_sensor1 = divmod1.quot;			// integers
+		Data_Measurements.D_sensor1 = divmod1.rem;			// fractional
 		
 		/********************* ADC2 LIGHT INTENSITY MEASUREMENT************************/
 		// ADC2 LIGHT INTENSITY MEASUREMENT
 		meas2 = ADC_MEASURE(PORTC2);
 		
 		// ADC2 LIGHT INTENSITY AS A VOLTAGE
-		meas2 = (5 * meas2) / 1024;			// skalujemy jako napiecie, 1024 bo ADC 10bitowy
-		meas2 *= 100;							// przesuwamy o dwa miejsca tak zeby zmienic format z x,xx na xxx
-		div_t divmod2 = div(meas2,100);		// tworzymy strukture w ktorej zapisujemy wynik i reszte z dzielenia przez 100 divmod.quot-wynik, divmod.rem-reszta
+		meas2 = (5 * meas2) / 1024;			// we scale as voltage, 1024 because ADC 10bit
+		meas2 *= 100;							// we shift it by two places to change the format from x, xx to xxx
+		div_t divmod2 = div(meas2,100);		// we create a structure in which we save the result and the remainder from division by 100 divmod.quot-result, divmod.rem-remainder
 		
 		//WRITE MEASUREMENTS TO STRUCTURE		//DATA STRUCTURE DEFINE IN EEPROM.h
-		Data_Measurements.I_sensor2 = divmod2.quot;			// zapisujemy w strukturze czesci calkowite
-		Data_Measurements.D_sensor2 = divmod2.rem;			// zapisujemy w strukturze czesci ulamkowe
+		Data_Measurements.I_sensor2 = divmod2.quot;			// integers
+		Data_Measurements.D_sensor2 = divmod2.rem;			// fractional
 		
 		
 		/************************************************			DHT11				*************************************************************/
@@ -183,7 +182,7 @@ int main(void)
 			USART_PutS(".");
 			USART_PutInt(D_Temp,10);
 			USART_PutC(176);
-			USART_PutS("C\n");
+			USART_PutS("C\n\n");
 		}	
 		sei();
 	}

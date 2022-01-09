@@ -1,9 +1,3 @@
-/*
- * terminal.c
- *
- * Created: 15.11.2021 15:50:08
- * Author : Mariusz
- */ 
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -11,14 +5,12 @@
 #include "usart.h"
 #include "terminal.h"
 
-// aby mieæ polskie ogonki w PUTTY ----> ustawiæ WINDOW / Translation / Win1250
-
 const char UCLS[] PROGMEM = { "\x1b""[2J" };
 
 const char UHOME[] PROGMEM = { "\x1b""[;H" };
 
-const char UCUR_HIDE[] PROGMEM = { "\x1b""[?25l" };		// wylacza kursor
-const char UCUR_SHOW[] PROGMEM = { "\x1b""[?25h" };		// wlacza kursor
+const char UCUR_HIDE[] PROGMEM = { "\x1b""[?25l" };		// cursor on
+const char UCUR_SHOW[] PROGMEM = { "\x1b""[?25h" };		// cursor off
 
 const char U_ATTR_OFF[] PROGMEM = { "\x1b""[m" };
 

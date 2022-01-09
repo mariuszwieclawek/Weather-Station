@@ -1,11 +1,3 @@
-/*
- * adc.h
- *
- * Created: 16.11.2021 14:05:55
- *  Author: Mariusz
- */ 
-
-
 #ifndef ADC_H_
 #define ADC_H_
 
