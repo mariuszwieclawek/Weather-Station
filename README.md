@@ -6,5 +6,6 @@ application using Bluetooth communication or using USB connection and computer s
 like “putty”. Data can also be saved to non-volatile memory and read at a later date.
 
 
-[Weather_station.pdf](https://github.com/mariuszwieclawek/Weather-Station/files/8410284/Weather_station.pdf)
+Documentation: [Weather_station.pdf](https://github.com/mariuszwieclawek/Weather-Station/files/8410284/Weather_station.pdf)
+
 How it works: https://youtu.be/Ov0-sqIlH0A
