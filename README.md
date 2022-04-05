@@ -1,5 +1,5 @@
 # Weather-Station
-Building a simple "weather station" to measure basic parameters such as
+Project based on Microchip ATmega328PB Xplained Mini Evaluation Kit. Building a simple "weather station" to measure basic parameters such as
 temperature, humidity, light intensity and the occurrence of rainfall. The device will be based
 on a microprocessor and sensors. Current data can be viewed using a smartphone
 application using Bluetooth communication or using USB connection and computer software
